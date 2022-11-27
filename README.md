@@ -1,2 +1,2 @@
-# issue-tracker
+# Issue Tracker Application
 Application to manage developer issues.

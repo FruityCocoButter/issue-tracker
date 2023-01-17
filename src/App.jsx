@@ -1,10 +1,6 @@
 {/*This jsx file will be fetched from the server as the html file is run in the browser
 It is transpiled in the browser into JavaScript*/}
 
-const initialIssues = [{id:1, issue_title:"movie trash", author:"Kgaugelo", status:1,
-        created:new Date("2023-01-03"), type:"bug fix"}, 
-            {id: 2, issue_title:"Empty vending machine", author:
-            "Kgaugelo", status: 3, created: new Date("2002-12-09"), type:"feature refactor"}];
 
 
 {/*BorderWrap component to apply a specified border style onto any component*/}
@@ -16,7 +12,7 @@ class IssueRow extends React.Component{
             <td>{this.props.issues.issue_title}</td>
             <td>{this.props.issues.author}</td>
             <td>{this.props.issues.status}</td>
-            <td>{this.props.issues.created.toLocaleDateString()}</td>
+            <td>{this.props.issues.created}</td>
             <td>{this.props.issues.type}</td>
         </tr>
         ) ;       
@@ -71,7 +67,7 @@ class IssueAdd extends React.Component{
         event.preventDefault(); {/*prevents loading of a new screen*/}
         const form = document.forms.issueAdd;
 
-        const nextIssue = {issue_title:form.title.value, author:form.owner.value, status:"fresh", type:"bug fix"};
+        const nextIssue = {issue_title:form.title.value, author:form.owner.value, status:Math.floor(Math.random()*5), type:"bug fix"};
         setTimeout(() => this.props.createIssue(nextIssue), 2000);
 
         form.owner.value ="";
@@ -98,8 +94,27 @@ class IssueList extends React.Component{
         this.createIssue = this.createIssue.bind(this);
     }
 
-    loadData(){
-        setTimeout(() => this.setState({issues:initialIssues}), 500);
+    async loadData(){
+        const query = `
+        query{
+            issueList{
+                id
+                issue_title
+                author
+                status
+                created
+                type
+            }
+        }`;
+
+        const response = await fetch('/graphql', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({query})
+        });
+
+        const result = await response.json();
+        setTimeout(() => this.setState({issues: result.data.issueList}), 500);
     }
 
     componentDidMount(){

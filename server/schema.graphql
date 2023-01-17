@@ -1,0 +1,17 @@
+type Issue{
+    id: Int!
+    issue_title: String!
+    author: String!
+    status: Int!
+    created: String!
+    type: String!
+}
+
+type Query{
+    about: String!
+    issueList: [Issue!]!
+}
+    
+type Mutation{
+    setAboutMessage(message: String!): String
+}

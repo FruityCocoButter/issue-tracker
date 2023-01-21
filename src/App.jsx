@@ -1,18 +1,28 @@
 {/*This jsx file will be fetched from the server as the html file is run in the browser
 It is transpiled in the browser into JavaScript*/}
 
-
-
 {/*BorderWrap component to apply a specified border style onto any component*/}
+
+//define reviver function
+const dateRegEx = new RegExp("^\\d\\d\\d\\d-\\d\\d-\\d\\d")
+
+var reviveDate = function(key, value){
+        if(dateRegEx.test(value)){
+            return new Date(value);
+        }
+
+        else{return value;}
+    }
 
 class IssueRow extends React.Component{
     render(){
+
         return (<tr>
             <td>{this.props.issues.id}</td>
             <td>{this.props.issues.issue_title}</td>
             <td>{this.props.issues.author}</td>
             <td>{this.props.issues.status}</td>
-            <td>{this.props.issues.created}</td>
+            <td>{this.props.issues.created.toDateString()}</td>
             <td>{this.props.issues.type}</td>
         </tr>
         ) ;       
@@ -87,6 +97,7 @@ class IssueAdd extends React.Component{
     }
 }
 
+
 class IssueList extends React.Component{
     constructor(){
         super();
@@ -95,8 +106,7 @@ class IssueList extends React.Component{
     }
 
     async loadData(){
-        const query = `
-        query{
+        const query = `query{
             issueList{
                 id
                 issue_title
@@ -104,8 +114,7 @@ class IssueList extends React.Component{
                 status
                 created
                 type
-            }
-        }`;
+            }}`;
 
         const response = await fetch('/graphql', {
             method: 'POST',
@@ -113,8 +122,10 @@ class IssueList extends React.Component{
             body: JSON.stringify({query})
         });
 
-        const result = await response.json();
-        setTimeout(() => this.setState({issues: result.data.issueList}), 500);
+        const result = await response.text();  //response object as text
+        const revived = JSON.parse(result, reviveDate);
+
+        setTimeout(() => this.setState({issues: revived.data.issueList}), 500);
     }
 
     componentDidMount(){

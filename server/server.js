@@ -1,15 +1,25 @@
+
+const initialIssues = [{id:1, issue_title:"movie trash", author:"Kgaugelo", status:1, created:new Date("2023-01-03"), type:"bug fix"}, 
+{id: 2, issue_title:"Empty vending machine", author:"Kgaugelo", status: 3, created: new Date("2002-12-09"), type:"feature refactor"}];
+
+
+
+
 //imports the top level function exported by the express module
 const express = require("express");
 const {ApolloServer} = require('apollo-server-express');
 
+//resolver for the GraphQLScalarType
+const {GraphQLScalarType} = require('graphql');
+
+//import file sync
 const fs = require('fs');
 
-const initialIssues = [{id:1, issue_title:"movie trash", author:"Kgaugelo", status:1, created:"2023-01-03", type:"bug fix"}, 
-    {id: 2, issue_title:"Empty vending machine", author:"Kgaugelo", status: 3, created: "2002-12-09", type:"feature refactor"}];
 
-
+//message to be fetched by About API
 let aboutMessage = "Issue Tracker Version 2";
 
+//create Query and Mutation resolvers
 function setAboutMessage(_, {message}){
     return aboutMessage = message;
 }
@@ -25,7 +35,14 @@ const resolvers = {
     },
     Mutation: {
         setAboutMessage
-    }};
+    },
+    GraphQLDate: new GraphQLScalarType({
+        name: "GraphQLDate", 
+        description:"A Date type",
+        serialize(value){
+            return value.toISOString();
+        }})
+    };
 
 const server = new ApolloServer({typeDefs:fs.readFileSync("./server/schema.graphql", "utf-8"), resolvers});
 

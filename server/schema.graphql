@@ -1,9 +1,11 @@
+scalar GraphQLDate
+
 type Issue{
     id: Int!
     issue_title: String!
     author: String!
     status: Int!
-    created: String!
+    created: GraphQLDate!
     type: String!
 }
 

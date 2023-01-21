@@ -1,9 +1,19 @@
 {/*This jsx file will be fetched from the server as the html file is run in the browser
  It is transpiled in the browser into JavaScript*/}
 {/*BorderWrap component to apply a specified border style onto any component*/}
+
+//define reviver function
+const dateRegEx = new RegExp("^\\d\\d\\d\\d-\\d\\d-\\d\\d");
+var reviveDate = function (key, value) {
+  if (dateRegEx.test(value)) {
+    return new Date(value);
+  } else {
+    return value;
+  }
+};
 class IssueRow extends React.Component {
   render() {
-    return /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", null, this.props.issues.id), /*#__PURE__*/React.createElement("td", null, this.props.issues.issue_title), /*#__PURE__*/React.createElement("td", null, this.props.issues.author), /*#__PURE__*/React.createElement("td", null, this.props.issues.status), /*#__PURE__*/React.createElement("td", null, this.props.issues.created), /*#__PURE__*/React.createElement("td", null, this.props.issues.type));
+    return /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", null, this.props.issues.id), /*#__PURE__*/React.createElement("td", null, this.props.issues.issue_title), /*#__PURE__*/React.createElement("td", null, this.props.issues.author), /*#__PURE__*/React.createElement("td", null, this.props.issues.status), /*#__PURE__*/React.createElement("td", null, this.props.issues.created.toDateString()), /*#__PURE__*/React.createElement("td", null, this.props.issues.type));
   }
 }
 class IssueFilter extends React.Component {
@@ -69,8 +79,7 @@ class IssueList extends React.Component {
     this.createIssue = this.createIssue.bind(this);
   }
   async loadData() {
-    const query = `
-        query{
+    const query = `query{
             issueList{
                 id
                 issue_title
@@ -78,8 +87,7 @@ class IssueList extends React.Component {
                 status
                 created
                 type
-            }
-        }`;
+            }}`;
     const response = await fetch('/graphql', {
       method: 'POST',
       headers: {
@@ -89,9 +97,10 @@ class IssueList extends React.Component {
         query
       })
     });
-    const result = await response.json();
+    const result = await response.text(); //response object as text
+    const revived = JSON.parse(result, reviveDate);
     setTimeout(() => this.setState({
-      issues: result.data.issueList
+      issues: revived.data.issueList
     }), 500);
   }
   componentDidMount() {

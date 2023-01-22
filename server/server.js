@@ -1,16 +1,15 @@
 
-const initialIssues = [{id:1, issue_title:"movie trash", author:"Kgaugelo", status:1, created:new Date("2023-01-03"), type:"bug fix"}, 
-{id: 2, issue_title:"Empty vending machine", author:"Kgaugelo", status: 3, created: new Date("2002-12-09"), type:"feature refactor"}];
-
-
+const initialIssues = [{id:1, issue_title:"movie trash", author:"Kgaugelo", status:1, created:new Date("2023-01-03"), type:"bug fix", due: new Date("2023-07-03")}, 
+{id: 2, issue_title:"Empty vending machine", author:"Kgaugelo", status: 3, created: new Date("2002-12-09"), type:"feature refactor", due: new Date("2002-06-09")}];
 
 
 //imports the top level function exported by the express module
 const express = require("express");
 const {ApolloServer} = require('apollo-server-express');
+const {Kind} = require('graphql/language');
 
 //resolver for the GraphQLScalarType
-const {GraphQLScalarType} = require('graphql');
+const {GraphQLScalarType, parseValue} = require('graphql');
 
 //import file sync
 const fs = require('fs');
@@ -20,9 +19,7 @@ const fs = require('fs');
 let aboutMessage = "Issue Tracker Version 2";
 
 //create Query and Mutation resolvers
-function setAboutMessage(_, {message}){
-    return aboutMessage = message;
-}
+
 
 function issueList(){
     return initialIssues;
@@ -34,13 +31,35 @@ const resolvers = {
         issueList
     },
     Mutation: {
-        setAboutMessage
+        setAboutMessage: (_, {message}) => {
+            aboutMessage = message;
+            return aboutMessage;
+        },
+        newIssue: (_, {input}) => {
+            input.id = initialIssues.length + 1;
+            input.created = new Date();
+
+            //if status undefined, set to 0
+            if(input.status == null) input.status = 0;
+
+            initialIssues.push(input);
+            return initialIssues;
+        }
     },
     GraphQLDate: new GraphQLScalarType({
         name: "GraphQLDate", 
         description:"A Date type",
+        // converts outgoing date to string
         serialize(value){
             return value.toISOString();
+        },
+
+        //the following converts incoming date strings to Dates
+        parseValue(value){
+            return new Date(value);
+        },
+        parseLiteral(ast){
+            return (ast.kind == Kind.STRING) ? new Date(ast.value) : "undefined";
         }})
     };
 

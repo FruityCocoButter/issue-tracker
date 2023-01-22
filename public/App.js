@@ -13,7 +13,7 @@ var reviveDate = function (key, value) {
 };
 class IssueRow extends React.Component {
   render() {
-    return /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", null, this.props.issues.id), /*#__PURE__*/React.createElement("td", null, this.props.issues.issue_title), /*#__PURE__*/React.createElement("td", null, this.props.issues.author), /*#__PURE__*/React.createElement("td", null, this.props.issues.status), /*#__PURE__*/React.createElement("td", null, this.props.issues.created.toDateString()), /*#__PURE__*/React.createElement("td", null, this.props.issues.type));
+    return /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", null, this.props.issues.id), /*#__PURE__*/React.createElement("td", null, this.props.issues.issue_title), /*#__PURE__*/React.createElement("td", null, this.props.issues.author), /*#__PURE__*/React.createElement("td", null, this.props.issues.status), /*#__PURE__*/React.createElement("td", null, this.props.issues.created.toDateString()), /*#__PURE__*/React.createElement("td", null, this.props.issues.due.toDateString()), /*#__PURE__*/React.createElement("td", null, this.props.issues.type));
   }
 }
 class IssueFilter extends React.Component {
@@ -30,7 +30,7 @@ class IssueTable extends React.Component {
   render() {
     return /*#__PURE__*/React.createElement("table", {
       className: "bordered-table"
-    }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "id"), /*#__PURE__*/React.createElement("th", null, "Title"), /*#__PURE__*/React.createElement("th", null, "Author"), /*#__PURE__*/React.createElement("th", null, "Status"), /*#__PURE__*/React.createElement("th", null, "Created"), /*#__PURE__*/React.createElement("th", null, "Type"))), /*#__PURE__*/React.createElement("tbody", null, this.props.issues.map(issue => /*#__PURE__*/React.createElement(IssueRow, {
+    }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "id"), /*#__PURE__*/React.createElement("th", null, "Title"), /*#__PURE__*/React.createElement("th", null, "Author"), /*#__PURE__*/React.createElement("th", null, "Status"), /*#__PURE__*/React.createElement("th", null, "Created"), /*#__PURE__*/React.createElement("th", null, "Due"), /*#__PURE__*/React.createElement("th", null, "Type"))), /*#__PURE__*/React.createElement("tbody", null, this.props.issues.map(issue => /*#__PURE__*/React.createElement(IssueRow, {
       key: issue.id,
       issues: issue
     }))));
@@ -49,7 +49,8 @@ class IssueAdd extends React.Component {
       issue_title: form.title.value,
       author: form.owner.value,
       status: Math.floor(Math.random() * 5),
-      type: "bug fix"
+      type: "bug fix",
+      due: new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 10)
     };
     setTimeout(() => this.props.createIssue(nextIssue), 2000);
     form.owner.value = "";
@@ -86,6 +87,7 @@ class IssueList extends React.Component {
                 author
                 status
                 created
+                due
                 type
             }}`;
     const response = await fetch('/graphql', {
@@ -106,16 +108,48 @@ class IssueList extends React.Component {
   componentDidMount() {
     this.loadData();
   }
-  createIssue(issue) {
-    issue.id = this.state.issues.length + 1;
-    issue.created = new Date();
-    const issueCopy = this.state.issues.slice();
-    {/*Deep copy issue array*/}
-    issueCopy.push(issue);
-    this.setState({
-      issues: issueCopy
+  async createIssue(issue) {
+    {/*const issueCopy = this.state.issues.slice(); 
+     issueCopy.push(issue);
+     this.setState({issues: issueCopy});
+     */}
+    const query = `
+        mutation{
+            newIssue(input: {
+              issue_title: \"${issue.issue_title}\",
+              author: \"${issue.author}\",
+              status: ${issue.status},
+              due: \"${issue.due.toDateString()}\",
+              type: \"${issue.type}\"
+            }){
+              id
+              issue_title
+              status
+              author
+              created
+              due
+              type
+            }
+          }
+        `;
+    const response = await fetch('/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        query
+      })
     });
+    const result = await response.text(); //response object as text
+    console.log(query);
+    console.log(result);
+    const revived = JSON.parse(result, reviveDate);
+    setTimeout(() => this.setState({
+      issues: revived.data.newIssue
+    }), 500);
   }
+  async addIssue() {}
   render() {
     return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("h1", null, "Issue Tracker"), /*#__PURE__*/React.createElement(IssueFilter, null), /*#__PURE__*/React.createElement("hr", null), /*#__PURE__*/React.createElement(IssueTable, {
       issues: this.state.issues

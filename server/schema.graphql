@@ -1,11 +1,22 @@
 scalar GraphQLDate
 
+"Issue inputs"
+input IssueInput{
+    issue_title: String!
+    author: String!
+    "Optional, if not specified, set to New!"
+    status: Int
+    type: String!
+    due: GraphQLDate
+}
+
 type Issue{
     id: Int!
     issue_title: String!
     author: String!
-    status: Int!
-    created: GraphQLDate!
+    status: Int
+    created: GraphQLDate
+    due: GraphQLDate
     type: String!
 }
 
@@ -16,4 +27,5 @@ type Query{
     
 type Mutation{
     setAboutMessage(message: String!): String
+    newIssue(input: IssueInput): [Issue]
 }

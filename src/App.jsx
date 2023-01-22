@@ -23,6 +23,7 @@ class IssueRow extends React.Component{
             <td>{this.props.issues.author}</td>
             <td>{this.props.issues.status}</td>
             <td>{this.props.issues.created.toDateString()}</td>
+            <td>{this.props.issues.due.toDateString()}</td>
             <td>{this.props.issues.type}</td>
         </tr>
         ) ;       
@@ -56,6 +57,7 @@ class IssueTable extends React.Component{
                         <th>Author</th>
                         <th>Status</th>
                         <th>Created</th>
+                        <th>Due</th>
                         <th>Type</th>
                     </tr>
                 </thead>
@@ -77,7 +79,7 @@ class IssueAdd extends React.Component{
         event.preventDefault(); {/*prevents loading of a new screen*/}
         const form = document.forms.issueAdd;
 
-        const nextIssue = {issue_title:form.title.value, author:form.owner.value, status:Math.floor(Math.random()*5), type:"bug fix"};
+        const nextIssue = {issue_title:form.title.value, author:form.owner.value, status:Math.floor(Math.random()*5), type:"bug fix", due: new Date((new Date()).getTime() + 1000*60*60*24*10)};
         setTimeout(() => this.props.createIssue(nextIssue), 2000);
 
         form.owner.value ="";
@@ -113,6 +115,7 @@ class IssueList extends React.Component{
                 author
                 status
                 created
+                due
                 type
             }}`;
 
@@ -132,13 +135,50 @@ class IssueList extends React.Component{
         this.loadData();
     }
 
-    createIssue(issue){
-        issue.id = this.state.issues.length + 1;
-        issue.created = new Date();
-
-        const issueCopy = this.state.issues.slice(); {/*Deep copy issue array*/}
+    async createIssue(issue){        
+        {/*const issueCopy = this.state.issues.slice(); 
         issueCopy.push(issue);
         this.setState({issues: issueCopy});
+        */}
+
+        const query = `
+        mutation{
+            newIssue(input: {
+              issue_title: \"${issue.issue_title}\",
+              author: \"${issue.author}\",
+              status: ${issue.status},
+              due: \"${issue.due.toDateString()}\",
+              type: \"${issue.type}\"
+            }){
+              id
+              issue_title
+              status
+              author
+              created
+              due
+              type
+            }
+          }
+        `;
+        
+        const response = await fetch('/graphql', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({query})
+        });
+
+        const result = await response.text();  //response object as text
+        console.log(query);
+        console.log(result);
+        const revived = JSON.parse(result, reviveDate);
+
+        setTimeout(() => this.setState({issues: revived.data.newIssue}), 500);
+    }
+
+    async addIssue(){
+        
+
+
     }
 
     render(){
